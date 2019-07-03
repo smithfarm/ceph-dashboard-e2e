@@ -17,6 +17,9 @@ fi
 
 set -ex
 
+BASEDIR=$(readlink -f "$(dirname ${0})")
+cd $BASEDIR
+
 # get URL of the running Dashboard
 URL=$(sudo ceph mgr services 2>/dev/null | jq -r .dashboard)
 
