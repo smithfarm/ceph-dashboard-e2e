@@ -73,6 +73,16 @@ cd $BASEDIR
 
 # get URL of the running Dashboard
 URL=$(sudo ceph mgr services 2>/dev/null | jq -r .dashboard)
+if [ -z "$URL" ]; then
+  echo "ERROR: dashboard is not available" >/dev/null
+  false
+fi
+if [[ $URL =~ ^http ]] ; then
+    echo "$URL looks like a URL" >/dev/null
+else
+    echo "$URL does not look like a URL" >/dev/null
+    false
+fi
 
 # setup RGW for E2E
 sudo radosgw-admin user create --uid=dev --display-name=Developer --system
