@@ -4,10 +4,11 @@
 #
 # Run the Ceph Dashboard E2E tests against a real Ceph cluster
 #
-# CAVEAT: do not run this script as root
+# CAVEAT: do *not* run this script as root, but *do* run it as a user with
+# passwordless sudo privilege.
 #
 # TODO: in its current form, this script assumes the Ceph cluster is
-# "pristine". More work is needed to make the script idempotent.
+# "pristine". More work is needed to achieve idempotence.
 
 if [ "$EUID" = "0" ] ; then
     echo "$0: detected attempt to run script as root - bailing out!"
@@ -17,7 +18,7 @@ fi
 set -ex
 
 # get URL of the running Dashboard
-URL=$(ceph mgr services 2>/dev/null | jq -r .dashboard)
+URL=$(sudo ceph mgr services 2>/dev/null | jq -r .dashboard)
 
 # setup RGW for E2E
 sudo radosgw-admin user create --uid=dev --display-name=Developer --system
