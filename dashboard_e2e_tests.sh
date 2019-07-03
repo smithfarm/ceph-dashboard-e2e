@@ -113,4 +113,4 @@ fi
 timeout -v 3h npm ci
 
 # run E2E
-timeout -v 3h npm run e2e:dev
+timeout -v 3h npx ng e2e --dev-server-target
