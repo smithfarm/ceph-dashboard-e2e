@@ -41,7 +41,6 @@ if ! rpm -q google-chrome-stable >/dev/null ; then
 fi
 
 # point Protractor at the running Dashboard
-sed -i
 sed -i -e "s#http://localhost:4200/#$URL#" protractor.conf.js
 
 # install nodeenv to get "npm" command
