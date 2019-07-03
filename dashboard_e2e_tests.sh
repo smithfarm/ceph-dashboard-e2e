@@ -113,4 +113,4 @@ fi
 timeout -v 3h npm ci
 
 # run E2E
-timeout -v 3h npm run e2e
+timeout -v 3h npm run e2e:dev
