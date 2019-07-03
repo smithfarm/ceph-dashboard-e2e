@@ -15,7 +15,58 @@ if [ "$EUID" = "0" ] ; then
     exit 1
 fi
 
+if [[ ! $(arch) =~ (i386|x86_64|amd64) ]]; then
+    echo "$0: this script uses Google Chrome, which is only available on amd64 - bailing out!"
+    exit 1
+fi
+
 set -ex
+
+function _install_google_chrome_deb {
+    sudo bash -c 'echo "deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+    sudo apt-get update
+    sudo apt-get install -y google-chrome-stable
+    sudo rm /etc/apt/sources.list.d/google-chrome.list
+}
+
+function _install_google_chrome_rh {
+    sudo dd of=/etc/yum.repos.d/google-chrome.repo status=none <<EOF
+[google-chrome]
+name=google-chrome
+baseurl=https://dl.google.com/linux/chrome/rpm/stable/\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub
+EOF
+    sudo yum install -y google-chrome-stable
+    sudo rm /etc/yum.repos.d/google-chrome.repo
+}
+
+function _install_google_chrome_suse {
+    sudo zypper --non-interactive addrepo --refresh --no-gpgcheck \
+        http://dl.google.com/linux/chrome/rpm/stable/x86_64 Google-Chrome
+    sudo zypper --non-interactive --no-gpg-checks install --force --no-recommends \
+        google-chrome-stable
+}
+
+function install_google_chrome {
+    source /etc/os-release
+    case "$ID" in
+        debian|ubuntu)
+            _install_google_chrome_deb
+            ;;
+        fedora|rhel|centos)
+            _install_google_chrome_rh
+            ;;
+        opensuse*|suse|sles)
+            _install_google_chrome_suse
+            ;;
+        *)
+            echo "$0: unsupported distro $ID - bailing out!"
+            exit 1
+    esac
+}
 
 BASEDIR=$(readlink -f "$(dirname ${0})")
 cd $BASEDIR
@@ -33,11 +84,8 @@ sudo ceph dashboard set-rgw-api-secret-key \
 sudo ceph dashboard set-rgw-api-ssl-verify False
 
 # install Google Chrome (needed for E2E)
-if ! rpm -q google-chrome-stable >/dev/null ; then
-    sudo zypper --non-interactive addrepo --refresh --no-gpgcheck \
-        http://dl.google.com/linux/chrome/rpm/stable/x86_64 Google-Chrome
-    sudo zypper --non-interactive --no-gpg-checks install --force --no-recommends \
-        google-chrome-stable
+if ! type google-chrome-stable >/dev/null 2>&1 ; then
+    install_google_chrome
 fi
 
 # point Protractor at the running Dashboard
@@ -52,9 +100,7 @@ if ! type npm >/dev/null 2>&1 ; then
 fi
 
 # install all Dashboard dependencies
-# FIXME: reduce to just the Protractor dependencies (?)
 timeout -v 3h npm ci
 
 # run E2E
-# FIXME: run Protractor directly instead of via npm (?)
 timeout -v 3h npm run e2e
