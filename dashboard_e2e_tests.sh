@@ -84,6 +84,9 @@ else
     false
 fi
 
+# set dashboard admin password
+sudo ceph dashboard ac-user-set-password admin admin
+
 # setup RGW for E2E
 sudo radosgw-admin user create --uid=dev --display-name=Developer --system
 sudo ceph dashboard set-rgw-api-user-id dev
@@ -112,5 +115,6 @@ fi
 # install all Dashboard dependencies
 timeout -v 3h npm ci
 
-# run E2E
-timeout -v 3h npx ng e2e --dev-server-target
+# run E2E, telling it to not start a dev server but instead use the one
+# specified in protractor.conf.js
+timeout -v 3h npx ng e2e --devServerTarget=''
